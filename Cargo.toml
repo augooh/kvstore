@@ -39,3 +39,7 @@ path = "examples/listexample/src/main.rs"
 [[example]]
 name = "clapgui"
 path = "examples/clapgui/src/main.rs"
+
+[[example]]
+name = "server"
+path = "examples/server/src/main.rs"
