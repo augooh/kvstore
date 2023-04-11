@@ -1,34 +1,37 @@
-use std::io::{self, Write}; // 引入标准I/O库
-use clap::{Arg, App}; // 引入clap库
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
+use std::str;
 
 fn main() {
-    if let Ok(stream) = TcpStream::connect("127.0.0.1:4567") {
-        println!("Connected to the server!");
-    } else {
-        println!("Couldn't connect to server...");
-    }
-
-    let matches = App::new("redis interactive shell")
-        .version("1.0")
-        .author("Your Name <you@example.com>")
-        .about("A Redis-like interactive shell")
-        .get_matches();
+    let mut stream = TcpStream::connect("127.0.0.1:4567").expect("Could not connect to server");
+    let mut input = String::new();
+    let mut reader = BufReader::new(stream.try_clone().expect("Could not clone stream"));
 
     loop {
         print!("kvstore> ");
-        io::stdout().flush().unwrap(); // 确保打印内容能够立即显示
+        std::io::stdout().flush().unwrap();
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap(); // 读取用户的输入
+        // 从用户获取输入
+        std::io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let input = input.trim();
+        let mut input_string = input.to_owned();
 
-        let command = input.trim(); // 去掉输入字符串两端的空白字符
+        // 发送命令到服务端
+        stream
+            .write_all(input_string.as_bytes())
+            .expect("Failed to write to server");
+        stream.write_all(b"\n").expect("Failed to write newline");
 
-        if command.to_lowercase() == "exit" {
-            break; // 如果用户输入"exit"则退出循环
-        }
+        // 读取服务端的响应并显示
+        let mut buffer: Vec<u8> = Vec::new();
+        reader
+            .read_until(b'\n', &mut buffer)
+            .expect("Could not read from server");
+        let response = str::from_utf8(&buffer).expect("Invalid UTF-8");
+        println!("{}", response.trim());
 
-        // 在这里执行用户的命令，例如将命令发送给Redis服务器进行处理
-        println!("You entered: {}", command); // 输出用户的输入
+        input_string.clear();
     }
 }
