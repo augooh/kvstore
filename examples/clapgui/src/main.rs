@@ -15,14 +15,12 @@ fn main() {
         std::io::stdin()
             .read_line(&mut input)
             .expect("Failed to read line");
-        let input = input.trim();
-        let mut input_string = input.to_owned();
+        let mut input_string = input.trim().to_owned();
 
         // 发送命令到服务端
         stream
             .write_all(input_string.as_bytes())
             .expect("Failed to write to server");
-        stream.write_all(b"\n").expect("Failed to write newline");
 
         // 读取服务端的响应并显示
         let mut buffer: Vec<u8> = Vec::new();
@@ -32,6 +30,6 @@ fn main() {
         let response = str::from_utf8(&buffer).expect("Invalid UTF-8");
         println!("{}", response.trim());
 
-        input_string.clear();
+        input.clear();
     }
 }
